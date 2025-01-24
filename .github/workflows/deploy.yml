@@ -39,7 +39,7 @@ jobs:
           key: ${{ secrets.WINTERMUTE_CHATBOT_SSH_KEY }}
           debug: true
           script: |
-            cd /home/telegram_bot_user/my_telegram_bot
+            cd /home/telegram_bot_user/telegram_bot_gemini
             git pull origin main
             source venv/bin/activate
             pip install -r requirements.txt
