@@ -23,16 +23,17 @@ async def respond(update: telegram.Update, context: telegram.ext.CallbackContext
     """Генерирует ответ с помощью Google AI Gemini Pro, используя промпт."""
     user_message = update.message.text
     prompt = f"{CUSTOM_PROMPT}\n\nПользователь: {user_message}\nБадди:"
-    print(f"Received message in chat {update.effective_chat.id}: {prompt}")
+    print(f"Received message in chat {update.effective_chat.id}: {prompt}")  # Логируем получение сообщения
     try:
         response = model.generate_content(prompt)
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=response.text)
+        response_text = response.text
+        print(f"Generated response: {response_text}") # Логируем сгенерированный ответ
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response_text)
     except Exception as e:
         print(f"An error occurred: {e}")
-        if hasattr(e, 'message'):
-            error_message = e.message
-        else:
-            error_message = str(e)
+        error_message = str(e)
+        if hasattr(e, 'candidates'):
+            print(f"Error details: {e.candidates}")
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Произошла ошибка: {error_message}")
 
 def main():
