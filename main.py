@@ -3,7 +3,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
-from telegramify_markdown import Telegramify
+from telegramify_markdown import telegramify
 
 load_dotenv()
 
@@ -15,7 +15,7 @@ with open("prompt.txt", "r") as f:
 
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel('gemini-pro')
-markdown_converter = Telegramify()
+markdown_converter = telegramify()
 
 async def start(update: telegram.Update, context: telegram.ext.CallbackContext):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Ну привет, я Иван Иван. Поболтаем?")
