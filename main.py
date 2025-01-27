@@ -37,7 +37,7 @@ async def respond(update: telegram.Update, context: telegram.ext.CallbackContext
         response = model.generate_content(messages)
         response_text = response.text
 
-        response_text_markdown = markdown_converter.convert(response_text)
+        response_text_markdown = telegramify(response_text).convert()
 
         history.append({'role': 'model', 'parts': [response_text_markdown]})
         context.user_data[user_id] = history
