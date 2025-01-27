@@ -3,7 +3,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
-from telegramify_markdown import convert
+from telegramify_markdown import Telegramify
 
 load_dotenv()
 
@@ -15,12 +15,12 @@ with open("prompt.txt", "r") as f:
 
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel('gemini-pro')
+markdown_converter = Telegramify()
 
 async def start(update: telegram.Update, context: telegram.ext.CallbackContext):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Ну привет, я Иван Иван. Поболтаем?")
 
 async def respond(update: telegram.Update, context: telegram.ext.CallbackContext):
-    """Генерирует ответ с помощью Google AI Gemini Pro, используя промпт и историю."""
     user_id = update.effective_user.id
     user_message = update.message.text
 
@@ -37,26 +37,18 @@ async def respond(update: telegram.Update, context: telegram.ext.CallbackContext
         response = model.generate_content(messages)
         response_text = response.text
 
-        # Конвертируем Markdown в Telegram-совместимый формат
-        response_text_markdown = convert(response_text)
+        response_text_markdown = markdown_converter.convert(response_text)
 
         history.append({'role': 'model', 'parts': [response_text_markdown]})
         context.user_data[user_id] = history
 
         print(f"Generated response: {response_text_markdown}")
-        # Отправляем отформатированное сообщение
+        
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=response_text_markdown,
             parse_mode=telegram.constants.ParseMode.MARKDOWN_V2
         )
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        error_message = str(e)
-        if hasattr(e, 'candidates'):
-            print(f"Error details: {e.candidates}")
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Произошла ошибка: {error_message}")
 
     except Exception as e:
         print(f"An error occurred: {e}")
