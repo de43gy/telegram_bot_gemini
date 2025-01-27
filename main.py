@@ -3,6 +3,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
+from telegramify_markdown import convert
 
 load_dotenv()
 
@@ -23,10 +24,7 @@ async def respond(update: telegram.Update, context: telegram.ext.CallbackContext
     user_message = update.message.text
 
     history = context.user_data.get(user_id, [])
-
     history.append({'role': 'user', 'parts': [user_message]})
-
-    # history = history[-MAX_HISTORY_LENGTH:]
 
     messages = [{"role": "model", "parts": [CUSTOM_PROMPT]}]
     messages.extend(history)
@@ -38,12 +36,19 @@ async def respond(update: telegram.Update, context: telegram.ext.CallbackContext
         response = model.generate_content(messages)
         response_text = response.text
 
-        history.append({'role': 'model', 'parts': [response_text]})
+        # Конвертируем Markdown в Telegram-совместимый формат
+        response_text_markdown = convert(response_text)
 
+        history.append({'role': 'model', 'parts': [response_text_markdown]})
         context.user_data[user_id] = history
 
-        print(f"Generated response: {response_text}")
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=response_text)
+        print(f"Generated response: {response_text_markdown}")
+        # Отправляем отформатированное сообщение
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=response_text_markdown,
+            parse_mode=telegram.constants.ParseMode.MARKDOWN_V2
+        )
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -54,10 +59,8 @@ async def respond(update: telegram.Update, context: telegram.ext.CallbackContext
 
 def main():
     application = Application.builder().token(TOKEN).build()
-
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT & (filters.ChatType.GROUPS | filters.ChatType.SUPERGROUP | filters.ChatType.PRIVATE), respond))
-
     application.run_polling()
 
 if __name__ == '__main__':
