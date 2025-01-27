@@ -4,6 +4,7 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 import os
 from telegramify_markdown import telegramify
+import re
 
 load_dotenv()
 
@@ -15,6 +16,17 @@ with open("prompt.txt", "r") as f:
 
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel('gemini-pro')
+
+def escape_special_chars(text):
+    """
+    Экранирует специальные символы для Telegram Markdown V2.
+    Telegram требует экранирования следующих символов: 
+    _ * [ ] ( ) ~ ` > # + - = | { } . !
+    """
+    special_chars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!']
+    for char in special_chars:
+        text = text.replace(char, f'\\{char}')
+    return text
 
 async def start(update: telegram.Update, context: telegram.ext.CallbackContext):
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Ну привет, я Иван Иван. Поболтаем?")
@@ -36,8 +48,11 @@ async def respond(update: telegram.Update, context: telegram.ext.CallbackContext
         response = model.generate_content(messages)
         response_text = response.text
 
-        formatted_text = await telegramify(response_text)
-        # Получаем форматированный текст напрямую из результата
+        # Сначала экранируем специальные символы
+        escaped_text = escape_special_chars(response_text)
+        
+        # Затем форматируем текст через telegramify
+        formatted_text = await telegramify(escaped_text)
         response_text_markdown = str(formatted_text)
 
         history.append({'role': 'model', 'parts': [response_text_markdown]})
@@ -56,7 +71,18 @@ async def respond(update: telegram.Update, context: telegram.ext.CallbackContext
         error_message = str(e)
         if hasattr(e, 'candidates'):
             print(f"Error details: {e.candidates}")
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Произошла ошибка: {error_message}")
+        # В случае ошибки форматирования отправляем текст без разметки
+        try:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=response_text,
+                parse_mode=None
+            )
+        except Exception as send_error:
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"Произошла ошибка: {str(send_error)}"
+            )
 
 def main():
     application = Application.builder().token(TOKEN).build()

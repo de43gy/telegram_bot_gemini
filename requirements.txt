@@ -2,3 +2,4 @@ python-telegram-bot
 google-generativeai
 python-dotenv
 telegramify-markdown
+telegramify-markdown[mermaid]
