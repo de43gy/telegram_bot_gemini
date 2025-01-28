@@ -48,10 +48,8 @@ async def respond(update: telegram.Update, context: telegram.ext.CallbackContext
         response = model.generate_content(messages)
         response_text = response.text
 
-        # Сначала экранируем специальные символы
         escaped_text = escape_special_chars(response_text)
         
-        # Затем форматируем текст через telegramify
         formatted_text = await telegramify(escaped_text)
         response_text_markdown = str(formatted_text)
 
@@ -71,7 +69,6 @@ async def respond(update: telegram.Update, context: telegram.ext.CallbackContext
         error_message = str(e)
         if hasattr(e, 'candidates'):
             print(f"Error details: {e.candidates}")
-        # В случае ошибки форматирования отправляем текст без разметки
         try:
             await context.bot.send_message(
                 chat_id=update.effective_chat.id,

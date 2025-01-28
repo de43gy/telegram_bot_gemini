@@ -42,5 +42,7 @@ jobs:
             cd /home/telegram_bot_user/telegram_bot_gemini
             git pull origin main
             source venv/bin/activate
+            python3 -m venv venv
             pip install -r requirements.txt
-            sudo systemctl restart telegram_bot_gemini.service
+            deactivate
+            sudo systemctl restart telegram_bot_gemini
